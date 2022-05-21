@@ -4,7 +4,6 @@ from os.path import isfile, join
 from re import findall, compile, sub
 from sklearn.feature_extraction.text import TfidfVectorizer
 import numpy as np
-from TF_IDF import tfidf
 
 
 # main path

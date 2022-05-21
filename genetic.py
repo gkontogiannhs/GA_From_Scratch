@@ -1,17 +1,3 @@
-#!/usr/bin/env python
-# coding: utf-8
- Κωδικοποίηση (Coding)
- Αρχικοποίηση (Initialization)
- Αποκωδικοποίηση (Decoding)
- Υπολογισμός ικανότητας ή αξιολόγηση (Fitness calculation ή evaluation)
- Επιλογή (Selection)
- Αναπαραγωγή (Reproduction)
- Διασταύρωση (Crossover ή mating)
- Μετάλλαξη (Mutation)
- Επανάληψη από το βήμα (2) μέχρι να ικανοποιηθεί το κριτήριο τερματισμού του Γ.Α
-# In[1]:
-
-
 import numpy as np
 import random
 
@@ -34,7 +20,7 @@ class Agent():
             
         # self.value = value
         return value
-        
+
 class Population():
     def __init__(self, pop_size, bits, pc, pm):
         self.pop_size = pop_size
@@ -53,7 +39,7 @@ class Population():
             
     def fitness(self):
         for agent in self.population:
-            agent.fitness = np.sum(agent)
+            agent.fitness = agent.decode()**2
         return self
     
         
@@ -149,11 +135,11 @@ def ga(POP_SIZE, BITS, PC, PM, generations):
         
         # apply fitness function to them
         population.fitness()
-    
+        
         best_agent = population.find_best()
         print('Generation: '+ str(i)+ '   {Local Best: '+ str(best_agent.value) + ' --> '+ str(best_agent.decode()) + '}')
 
-        if pop.validate_agent(best_agent):
+        if population.validate_agent(best_agent):
             print('\nWe got winner:')
             print(best_agent.fitness)
             break
@@ -163,3 +149,6 @@ def ga(POP_SIZE, BITS, PC, PM, generations):
         population.crossover()
         population.mutation()
 
+if __name__ == '__main__':
+    POP_SIZE, BITS, PC, PM, GENS = 5, 5, 0.25, 0.01, 2000
+    ga(POP_SIZE, BITS, PC, PM, GENS)
