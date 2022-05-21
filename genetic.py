@@ -148,7 +148,3 @@ def ga(POP_SIZE, BITS, PC, PM, generations):
         population.selection()
         population.crossover()
         population.mutation()
-
-if __name__ == '__main__':
-    POP_SIZE, BITS, PC, PM, GENS = 5, 5, 0.25, 0.01, 2000
-    ga(POP_SIZE, BITS, PC, PM, GENS)

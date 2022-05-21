@@ -4,7 +4,7 @@ from os.path import isfile, join
 from re import findall, compile, sub
 from sklearn.feature_extraction.text import TfidfVectorizer
 import numpy as np
-from TF_IDF import tfidf
+from genetic import ga
 
 
 # main path
@@ -12,16 +12,6 @@ home = path.expanduser('~')
 mypath = f'{home}/Downloads/DeliciousMIL/Data/'
 # list files
 files = [f for f in listdir(mypath) if isfile(join(mypath, f))]
-
-
-# In[275]:
-
-
-print(files)
-
-
-# In[276]:
-
 
 def get_documents(filename):
     with open(filename, encoding='utf-8') as f:
@@ -35,28 +25,10 @@ def get_documents(filename):
             
         return corpus
 
-
-# In[277]:
-
-
 corpus = get_documents(mypath+files[3])
-
-
-# In[278]:
-
-
-corpus[0]
-
-
-# In[279]:
-
 
 tfidf_vectorizer = TfidfVectorizer()
 X = tfidf_vectorizer.fit_transform(corpus)
-
-
-# In[280]:
-
 
 X_dense = X.todense()
 # TFIDF of words not in the doc will be 0, so replace them with nan
@@ -66,16 +38,6 @@ means = np.nanmean(X_dense, axis=0)
 # convert it into a dictionary for later lookup
 TF_IDF_means = dict(zip(tfidf_vectorizer.get_feature_names(), means.tolist()[0]))
 
-
-# In[281]:
-
-
-len(TF_IDF_means)
-
-
-# In[282]:
-
-
 # not all words are present in the dataset
 # so we append missing with tfidf value of 0
 for key in range(8520):
@@ -83,14 +45,7 @@ for key in range(8520):
         TF_IDF_means[str(key)] = 0
 
 
-# In[284]:
-
-
 sum(TF_IDF_means.values())/8510*1000
-
-
-# In[285]:
-
 
 for _ in range(100):
     chromosome = np.random.choice([0, 1], size=(X.shape[1],), p=[0.82, 0.18])
@@ -99,8 +54,7 @@ for _ in range(100):
     print(tfidf_mean)
 
 
-# In[ ]:
 
-
-
-
+if __name__ == '__main__':
+    POP_SIZE, BITS, PC, PM, GENS = 5, 5, 0.25, 0.01, 2000
+    ga(POP_SIZE, BITS, PC, PM, GENS)
