@@ -1,10 +1,10 @@
-from os import listdir
-from os import path
+from os import listdir, path
 from os.path import isfile, join
 from re import compile
 from sklearn.feature_extraction.text import TfidfVectorizer
-import numpy as np
+from numpy import nanmean, nan
 from genetic import Population
+import seaborn as sns; sns.set_theme()
 
 
 def get_documents(filename):
@@ -35,10 +35,10 @@ def calc_tdif_means():
     X_dense = X.todense()
 
     # TFIDF of words not in the doc will be 0, so replace them with nan
-    X_dense[X_dense == 0] = np.nan
+    X_dense[X_dense == 0] = nan
 
     # Use nanmean of numpy which will ignore nan while calculating the mean
-    means = np.nanmean(X_dense, axis=0)
+    means = nanmean(X_dense, axis=0)
 
     # convert it into a dictionary for later lookup
     TF_IDF_means = dict(zip(tfidf_vectorizer.get_feature_names_out(), means.tolist()[0]))
@@ -55,11 +55,11 @@ def calc_tdif_means():
 def fitness(agents, TF_IDF_means):
     for agent in agents:
         chromo_tfidf_words = [TF_IDF_means[str(i)] for i in range(BITS) if agent.value[i] == 1]
-        if np.sum(agent.value) >= 1000:
-            agent.fitness = np.sum(chromo_tfidf_words)/np.sum(agent.value)*1000
+        if sum(agent.value) >= 1000:
+            agent.fitness = sum(chromo_tfidf_words)/sum(agent.value)*1000
         else:
             print('Invalid solution!')
-            agent.fitness = np.sum(chromo_tfidf_words)/(agent.length-np.sum(agent.value))*1000
+            agent.fitness = sum(chromo_tfidf_words)/(agent.length-sum(agent.value))*1000
     return agents
 
 
@@ -74,15 +74,15 @@ def ga(POP_SIZE, BITS, PC, PM, generations):
     for i in range(generations):   
         
         # apply fitness function to them
-        population.population = fitness(population.population, TF_IDF_means)
+        population.population = fitness(population.population, TF_IDF_means)[:]
         
         best_agent = population.find_best()
-        print('Generation: '+ str(i)+ '   {Local Best: '+ str(np.sum(best_agent.value)) + ' --> '+ str(best_agent.fitness) + '}')
+        print('Generation: '+ str(i)+ '   {Local Best: '+ str(sum(best_agent.value)) + ' --> '+ str(best_agent.fitness) + '}')
 
         if population.validate_agent(best_agent):
             print('\nWe got winner:')
             print(best_agent.fitness)
-            break
+            return best_agent
 
         # apply genetic operators
         population.selection()
@@ -92,5 +92,9 @@ def ga(POP_SIZE, BITS, PC, PM, generations):
 
 if __name__ == '__main__':
 
-    POP_SIZE, BITS, PC, PM, GENS = 10, 8520, 0.25, 0.01, 100
-    ga(POP_SIZE, BITS, PC, PM, GENS)
+    POP_SIZE, BITS, PC, PM, GENS = 20, 8520, 0.25, 0.01, 100
+    best_agent = ga(POP_SIZE, BITS, PC, PM, GENS)
+    print(best_agent)
+    # to set varianve to initial population creation
+    # αναπροσαρμογη πιθανοτητας ισως
+    
