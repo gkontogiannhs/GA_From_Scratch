@@ -4,22 +4,11 @@ import random
 class Agent():
     def __init__(self, length):
         self.length = length
-        self.value = np.random.choice([0, 1], size=(self.length,), p=[5/6, 1/6])
+        self.value = np.random.choice([0, 1], size=(self.length,), p=[4/5, 1/5])
         self.fitness = -1
         
     def __str__(self):
         return 'Value: ' + str(self.value) + ' Fitness: ' + str(self.fitness) + '\n'
-    
-    # convert to decimal
-    def decode(self):
-        value = 0
-        pow = self.length-1
-        for bit in self.value:
-            value += (bit * (2**pow))
-            pow -= 1
-            
-        # self.value = value
-        return value
 
 class Population():
     def __init__(self, pop_size, bits, pc, pm):
@@ -36,13 +25,7 @@ class Population():
         for agent in self.population:
             string += 'Value: ' + str(agent.value) + ' Fitness: ' + str(agent.fitness) + '\n'
         return string
-            
-    def fitness(self):
-        for agent in self.population:
-            agent.fitness = agent.decode()**2
-        return self
     
-        
     def selection(self):
         # sort by best
         agents = sorted(self.population, key=lambda a: a.fitness, reverse=True)
@@ -114,7 +97,7 @@ class Population():
         return self
     
     def validate_agent(self, agent):
-        if agent.fitness >= 900:
+        if agent.fitness >= 124:
             return True
         return False
             
@@ -124,27 +107,3 @@ class Population():
             if self.population[i].fitness > self.population[index].fitness:
                 index = i
         return self.population[index]
-            
-    
-def ga(POP_SIZE, BITS, PC, PM, generations):
-    
-    # create population
-    population = Population(POP_SIZE, BITS, PC, PM)
-
-    for i in range(generations):   
-        
-        # apply fitness function to them
-        population.fitness()
-        
-        best_agent = population.find_best()
-        print('Generation: '+ str(i)+ '   {Local Best: '+ str(best_agent.value) + ' --> '+ str(best_agent.decode()) + '}')
-
-        if population.validate_agent(best_agent):
-            print('\nWe got winner:')
-            print(best_agent.fitness)
-            break
-
-        # apply genetic operators
-        population.selection()
-        population.crossover()
-        population.mutation()
