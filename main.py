@@ -1,10 +1,12 @@
 from os import listdir, path
 from os.path import isfile, join
 from re import compile
+import numpy
 from sklearn.feature_extraction.text import TfidfVectorizer
 from numpy import nanmean, nan
 from genetic import Population
 import seaborn as sns; sns.set_theme()
+from matplotlib import pyplot as plt
 
 
 def get_documents(filename):
@@ -57,44 +59,72 @@ def fitness(agents, TF_IDF_means):
         chromo_tfidf_words = [TF_IDF_means[str(i)] for i in range(BITS) if agent.value[i] == 1]
         if sum(agent.value) >= 1000:
             agent.fitness = sum(chromo_tfidf_words)/sum(agent.value)*1000
-        else:
-            print('Invalid solution!')
-            agent.fitness = sum(chromo_tfidf_words)/(agent.length-sum(agent.value))*1000
+        elif sum(agent.value) >= 2000 or sum(agent.value) < 1000:
+            agent.fitness = sum(chromo_tfidf_words)/(sum(agent.value)+200)*1000
     return agents
 
 
 def ga(POP_SIZE, BITS, PC, PM, generations):
     
-    # create population
-    population = Population(POP_SIZE, BITS, PC, PM)
-
     # get values to use
     TF_IDF_means = calc_tdif_means()
+    # variable to check the number of iters that algorithm is not improving
+    cnt = 0
 
-    for i in range(generations):   
-        
-        # apply fitness function to them
-        population.population = fitness(population.population, TF_IDF_means)[:]
-        
-        best_agent = population.find_best()
-        print('Generation: '+ str(i)+ '   {Local Best: '+ str(sum(best_agent.value)) + ' --> '+ str(best_agent.fitness) + '}')
+    fit = []
+    performance = []
+    for _ in range(3):
+        # create population
+        population = Population(POP_SIZE, BITS, PC, PM)
 
-        if population.validate_agent(best_agent):
-            print('\nWe got winner:')
-            print(best_agent.fitness)
-            return best_agent
+        for i in range(generations):   
 
-        # apply genetic operators
-        population.selection()
-        population.crossover()
-        population.mutation()
+            # apply fitness function to them
+            population.population = fitness(population.population, TF_IDF_means)[:]
+            # get fittest agent 
+            best_agent = population.get_fittest()
+            fit.append(best_agent.fitness)
+            print(f'Generation: {i} [Local Best: {sum(best_agent.value)} --> {best_agent.fitness}]')
+
+            # check termination conditions
+            # or 
+            if best_agent.fitness <= fit[i-1] or fit[i-1]*1.01 > best_agent.fitness:
+                cnt += 1
+            else:
+                cnt = 0
+            if cnt >= 80:
+                break
+
+            # apply genetic operators
+            population.selection(select='rank_roullete')
+            population.crossover(select='multi', N=50)
+            population.mutation()
+
+        performance.append(fit)
+        fit = []
+        cnt = 0
+
+    else:
+        return performance
 
 
 if __name__ == '__main__':
 
-    POP_SIZE, BITS, PC, PM, GENS = 20, 8520, 0.25, 0.01, 100
-    best_agent = ga(POP_SIZE, BITS, PC, PM, GENS)
-    print(best_agent)
+    POP_SIZE, BITS, PC, PM, GENS = 200, 8520, 0.6, 0.01, 500
+    per = ga(POP_SIZE, BITS, PC, PM, GENS)
+
+    # average ages
+    avg_ages = sum([len(subarr) for subarr in per])/3
+    print(avg_ages)
+    # find longest 
+    max_l = len(max(per, key=len))
+    # apply padding just in case
+    arr = numpy.array(([subarr + [subarr[-1]] * (max_l - len(subarr)) for subarr in per]))
+    # average them
+    avg_per_age = arr.mean(axis=0)
+    plt.plot(avg_per_age)
+    plt.show()
+    
     # to set varianve to initial population creation
     # αναπροσαρμογη πιθανοτητας ισως
-    
+    # mutation with elitism
