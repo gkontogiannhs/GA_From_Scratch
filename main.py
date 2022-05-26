@@ -108,7 +108,7 @@ def ga(POP_SIZE, BITS, PC, PM, generations):
             # apply genetic operators
             population.selection(select='rank_roullete')
             population.crossover(select='multi', N=50)
-            population.mutation()
+            # population.mutation()
 
         # keep best from each run
         if best_agents:
@@ -135,7 +135,7 @@ if __name__ == '__main__':
     target = sum(tfidf[:1000])
 
     # apply genetic
-    POP_SIZE, BITS, PC, PM, GENS = 200, 8520, 0.9, 0.01, 1000
+    POP_SIZE, BITS, PC, PM, GENS = 200, 8520, 0.9, 0., 500
     per = ga(POP_SIZE, BITS, PC, PM, GENS)
 
 

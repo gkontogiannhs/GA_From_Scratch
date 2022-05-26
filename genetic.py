@@ -5,7 +5,7 @@ from random import randint, random, uniform, choices
 class Agent():
     def __init__(self, length):
         self.length = length
-        self.value = choice([0, 1], size=(self.length,), p=[7/8, 1/8]).tolist()
+        self.value = choice([0, 1], size=(self.length,), p=[8/9, 1/9]).tolist()
         self.fitness = -1
         
     def __str__(self):
