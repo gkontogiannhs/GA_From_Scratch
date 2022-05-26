@@ -49,9 +49,10 @@ class Population():
         self.population = new_gen[:]
         return self
 
-    def rank_roullete(self):
+    def rank_roullete(self, q_probs=[]):
         # sort by best
         agents = sorted(self.population, key=lambda a: a.fitness, reverse=True)
+
         denom = sum(range(1, self.pop_size))
         q_probs = cumsum([(self.pop_size-i+1)/denom for i in range(1, self.pop_size+1)]).tolist()
         
@@ -119,8 +120,8 @@ class Population():
 
         self.population = offspring[:]
 
-    def multi_point_cross(self):
-        for _ in range(50):
+    def multi_point_cross(self, N):
+        for _ in range(N):
             self.single_point_cross()
 
     def uniform_cross(self):
@@ -155,16 +156,16 @@ class Population():
 
         self.population = offspring[:]
 
-    def crossover(self, select='single', N=20):    
+    def crossover(self, select='single', N=50):    
         if select == 'single':
             self.single_point_cross()
         elif select == 'multi':
-            for _ in range(50):
+            for _ in range(N):
                 self.single_point_cross()
         elif select == 'uniform':
             self.uniform_cross()
         else:
-            raise('Not valid selec option!')
+            raise('Not valid selection option!')
         return self
     
     def mutation(self):
@@ -172,7 +173,7 @@ class Population():
         for agent in self.population:
             if agent != best:
                 for i in range(self.bits):
-                    if random() <= self.pm:
+                    if random() <= self.pm and random() <= self.pm*10:
                         agent.value[i] = 1 - agent.value[i]
         return self
             
