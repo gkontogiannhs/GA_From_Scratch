@@ -2,7 +2,7 @@ from os import listdir, path
 from os.path import isfile, join
 from re import compile
 from sklearn.feature_extraction.text import TfidfVectorizer
-from numpy import nanmean, nan, cumsum, array, divide
+from numpy import nanmean, nan, array, divide
 from genetic import Population
 import seaborn as sns; sns.set_theme()
 from matplotlib import pyplot as plt
@@ -48,7 +48,7 @@ def calc_tdif_means():
     # so we append missing with tfidf value of 0
     for key in range(8520):
         if str(key) not in TF_IDF_means:
-            TF_IDF_means[str(key)] = -.1
+            TF_IDF_means[str(key)] = -.5
 
     return TF_IDF_means
 
@@ -58,8 +58,10 @@ def fitness(agents, TF_IDF_means):
         chromo_tfidf_words = [TF_IDF_means[str(i)] for i in range(agent.length) if agent.value[i] == 1]
         if sum(agent.value) >= 1000 and sum(agent.value) <= 2500:
             agent.fitness = sum(chromo_tfidf_words)/sum(agent.value)*1000
+        elif sum(agent.value) < 1000:
+            agent.fitness = sum(chromo_tfidf_words)/(1000/sum(agent.value))
         else:
-            agent.fitness = sum(chromo_tfidf_words)/(sum(agent.value)+200)*1000
+            agent.fitness = sum(chromo_tfidf_words)/(2*sum(agent.value)-2500)*1000
     return agents
 
 def store_solution(best_agent):
@@ -71,7 +73,7 @@ def store_solution(best_agent):
         FileNotFoundError
 
 def ga(POP_SIZE, BITS, PC, PM, generations):
-    
+
     # get values to use
     TF_IDF_means = calc_tdif_means()
     # variable to check the number of iters that algorithm is not improving
@@ -81,7 +83,7 @@ def ga(POP_SIZE, BITS, PC, PM, generations):
     performance = []
     best_agents = []
 
-    for _ in range(5):
+    for _ in range(10):
         # create population
         population = Population(POP_SIZE, BITS, PC, PM)
 
@@ -108,7 +110,7 @@ def ga(POP_SIZE, BITS, PC, PM, generations):
             population.crossover(select='multi', N=50)
             population.mutation()
 
-        # keep best from each  run
+        # keep best from each run
         if best_agents:
             if best_agents[-1].fitness < best_agent.fitness:
                 best_agents.append(best_agent)
@@ -127,12 +129,13 @@ def ga(POP_SIZE, BITS, PC, PM, generations):
 if __name__ == '__main__':
 
     # target value
+    # 1000 most useful words
     tfidf = list(calc_tdif_means().values())
     tfidf.sort(reverse=True)
     target = sum(tfidf[:1000])
 
     # apply genetic
-    POP_SIZE, BITS, PC, PM, GENS = 20, 8520, 0.6, 0.001, 500
+    POP_SIZE, BITS, PC, PM, GENS = 200, 8520, 0.9, 0.01, 1000
     per = ga(POP_SIZE, BITS, PC, PM, GENS)
 
 
@@ -168,5 +171,3 @@ if __name__ == '__main__':
     fig.tight_layout()
 
     plt.show()
-    # to set varianve to initial population creation
-    # αναπροσαρμογη πιθανοτητας ισως
