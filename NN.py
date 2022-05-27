@@ -1,28 +1,15 @@
 from main import get_documents
 from os import path
-from sklearn.feature_extraction.text import CountVectorizer, TfidfVectorizer
+from sklearn.feature_extraction.text import CountVectorizer
 from sklearn.preprocessing import MinMaxScaler
 from sklearn.model_selection import train_test_split
 import numpy as np
 from tensorflow import keras
 from keras import backend as K
 import matplotlib.pyplot as plt
-from sklearn.metrics import classification_report
+from sklearn.model_selection import KFold
 from sklearn.metrics import accuracy_score
 
-
-"""
-before_after = []
-    from pandas import DataFrame
-    from matplotlib import pyplot as plt
-    for i, doc in enumerate(corpus):
-        # print(f'Document {i}|  Before: {len(doc.split(" "))} |  After: {len(new_corpus[i].split(" "))}')
-        before_after += [(len(doc.split(" ")), len(new_corpus[i].split(" ")))]
-
-    df = DataFrame(before_after, columns=['Before', 'After'])
-    df.plot()
-    plt.show()
-"""
 
 def get_y(filename):
     
@@ -41,57 +28,63 @@ def get_y(filename):
     except FileNotFoundError:
         raise "Count not read file"
 
-def rmse(y_true, y_pred):
-    return K.sqrt(K.mean(K.square(y_pred - y_true)))
 
-def get_model(n_inputs, n_outputs, loss_f, n_hidden1, n_hidden2, lr, m, wd):
+def get_model(n_inputs, n_outputs, n_hidden1, lr, m):
     model = keras.models.Sequential()
     model.add(keras.Input(shape=(n_inputs,)))
     model.add(keras.layers.Dense(n_hidden1, activation='relu'))
-    # model.add(keras.layers.Dense(n_hidden2, activation='relu'))
     model.add(keras.layers.Dense(n_outputs, activation='sigmoid'))
-
-    opt = keras.optimizers.SGD(learning_rate=lr)
-    model.compile(optimizer=opt, loss=loss_f)
+    opt = keras.optimizers.SGD(learning_rate=lr, momentum=m)
+    model.compile(optimizer=opt, loss='binary_crossentropy', metrics=['acc'])
 
     return model
 
 def evaluate_model(X, y):
     train_acc, test_acc, train_loss, test_loss = [], [], [], []
-
     # train - test data split 
     X_train, X_test, y_train, y_test = train_test_split(X, y, test_size=0.2, random_state=42)
 
-    # create model
-    # input-demensions, output-dims, loss-function, hidden1, hidden2, learning-rate, momentum, weight-decay
-    model = get_model(X.shape[1], y.shape[1], 'binary_crossentropy', 5, 20, 0.01, 0.6, 0.1)
+    # Split the data to training and testing data 5-Fold
+    kfold = KFold(n_splits=2, shuffle=True)
+    for i, (train, eval) in enumerate(kfold.split(X_train)):
 
-    # Fit model
-    h = model.fit(X_train, y_train, validation_split=0.2, epochs=300, verbose=0)
+        # create model
+        # input-demensions, output-dims, loss-function, hidden1, learning-rate
+        model = get_model(X.shape[1], y.shape[1], 20, 0.01, 0.6)
 
-    # store for each fold the history
-    #train_acc.append(h.history['binary_accuracy'])
-    #test_acc.append(h.history['val_binary_accuracy'])
-    #train_loss.append(h.history['loss'])
-    #test_loss.append(h.history['val_loss'])
+        # Fit model
+        h = model.fit(X_train[train], y_train[train], validation_data=(X_train[eval], y_train[eval]), epochs=150, verbose=0)
 
+        # store for each fold the history
+        train_acc.append(h.history['acc'])
+        test_acc.append(h.history['val_acc'])
+        train_loss.append(h.history['loss'])
+        test_loss.append(h.history['val_loss'])
+
+        # make predict to unseen data
+        yhat = model.predict(X_test)    
+        yhat = yhat.round()
+        # calculate accuracy
+        acc = accuracy_score(y_test, yhat)
+        # store result
+        print('>%.3f' % acc)
+
+    # average folds
+    train_acc = np.average(train_acc, axis=0)
+    test_acc = np.average(test_acc, axis=0)
+    train_loss = np.average(train_loss, axis=0)
+    test_loss = np.average(test_loss, axis=0)
+    
     # plot averaged folds
-    # plot(train_acc[0], test_acc[0], train_loss[0], test_loss[0], 'RMSE')
-        
-    # make predict to unseen data
-    yhat = model.predict(X_test)    
-    yhat = yhat.round()
-    acc = accuracy_score(y_test, yhat)
-    # store result
-    print('>%.3f' % acc)
-    print(classification_report(y_test, yhat))
+    plot(train_acc, test_acc, train_loss, test_loss, 'CE')
 
     
 def plot(train_acc, test_acc, train_loss, test_loss, label):
+    # summarize history for loss
     plt.plot(train_acc)
     plt.plot(test_acc)
     plt.title(label + ' - Accuracy')
-    plt.ylabel('accuracy')
+    plt.ylabel('Acc')
     plt.xlabel('epoch')
     plt.legend(['train', 'test'], loc='upper left')
     plt.show()
@@ -132,8 +125,8 @@ if __name__ == '__main__':
     # get y labels
     y = get_y(mypath+'train-label.dat')
 
-    # tranform X, y to numpy arrays
-    X_bow = TfidfVectorizer().fit_transform(new_corpus).toarray()
+    # get BoW
+    X_bow = CountVectorizer().fit_transform(new_corpus).toarray()
 
     ################ NORMALIZATION ########################################
     X = MinMaxScaler().fit_transform(X_bow)
