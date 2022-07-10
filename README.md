@@ -1,4 +1,4 @@
-# This repo hosts an object oriented implementation of a Genetic Algorithm trying to find the most important words in corpus in order to be fed in a neural network
+# This repo hosts an object oriented implementation of a Genetic Algorithm trying to find the most important words in a corpus, in order to be fed in a neural network
 ## genetic.py contains the code for it accompanied by the basic mutation method and some crossover, selection methods based on different teqnuiches  
 ### For the procedure of selection, suit your needs by picking between:
 - cost roullete selection
